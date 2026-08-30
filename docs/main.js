@@ -38,8 +38,3 @@ document.documentElement.classList.remove("no-js");
     io.observe(el);
   });
 })();
-
-// Stagger the hero's CSS entrance animation via --enter-i.
-document.querySelectorAll("[data-enter]").forEach(function (el, i) {
-  el.style.setProperty("--enter-i", i);
-});

@@ -156,8 +156,8 @@ code {
   to { opacity: 1; transform: translateY(0); }
 }
 [data-enter] {
-  animation: fade-up 560ms var(--ease-out-expo) both;
-  animation-delay: calc(var(--enter-i, 0) * 70ms);
+  animation: fade-up 380ms var(--ease-out-expo) both;
+  animation-delay: calc(var(--enter-i, 0) * 45ms);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-enter] { animation: none; }
