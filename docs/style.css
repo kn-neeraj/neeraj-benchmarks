@@ -334,8 +334,7 @@ code {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
-.chart-canvas-box { width: 100%; }
-.chart-canvas-box svg { max-width: 100%; height: auto; overflow: visible; }
+.chart-canvas-box { position: relative; height: 230px; }
 .chart-fallback { display: none; color: var(--ink-faint); font-size: 0.85rem; padding: 2rem 0; }
 .no-js .chart-canvas-box { display: none; }
 .no-js .chart-fallback { display: block; }

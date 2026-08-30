@@ -1,112 +1,119 @@
-// Renders the results chart with Observable Plot (loaded via CDN). SVG
-// output, so it inherits the page's fonts/colors instead of looking like an
-// embedded canvas widget. Reads data from the #results-data JSON script tag
-// so the same script works for any experiment page.
+// Renders the results bar chart using Chart.js (loaded via CDN), with a
+// small custom plugin drawing 95%-CI whiskers on top of each bar. Reads
+// data from the #results-data JSON script tag so the same script works for
+// any experiment page.
 (function () {
   var dataEl = document.getElementById("results-data");
-  if (!dataEl || typeof Plot === "undefined") return;
+  if (!dataEl || typeof Chart === "undefined") return;
   var data = JSON.parse(dataEl.textContent);
-  var box = document.getElementById("results-chart");
-  if (!box) return;
+  var canvas = document.getElementById("results-chart");
+  if (!canvas) return;
 
-  var rows = data.labels.map(function (label, i) {
-    return {
-      label: label,
-      mean: data.means[i],
-      ci_low: data.ci_low[i],
-      ci_high: data.ci_high[i],
-      n: data.ns[i],
-    };
-  });
+  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var styles = getComputedStyle(document.documentElement);
+  var css = function (name) { return styles.getPropertyValue(name).trim(); };
 
-  function css(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
+  var ciWhiskerPlugin = {
+    id: "ciWhisker",
+    afterDatasetsDraw: function (chart) {
+      var meta = chart.getDatasetMeta(0);
+      var ctx = chart.ctx;
+      var xScale = chart.scales.x;
+      var ciColor = css("--chart-ci") || "#131311";
+      ctx.save();
+      ctx.strokeStyle = ciColor;
+      ctx.globalAlpha = 0.65;
+      ctx.lineWidth = 2;
+      meta.data.forEach(function (bar, i) {
+        var low = xScale.getPixelForValue(data.ci_low[i]);
+        var high = xScale.getPixelForValue(data.ci_high[i]);
+        var y = bar.y;
+        var capHalf = 5;
+        ctx.beginPath();
+        ctx.moveTo(low, y);
+        ctx.lineTo(high, y);
+        ctx.moveTo(low, y - capHalf);
+        ctx.lineTo(low, y + capHalf);
+        ctx.moveTo(high, y - capHalf);
+        ctx.lineTo(high, y + capHalf);
+        ctx.stroke();
+      });
+      ctx.restore();
+    },
+  };
 
-  function render() {
-    box.innerHTML = "";
-    var fontBody = css("--font-body") || "sans-serif";
-    var fontMono = css("--font-mono") || "monospace";
-    var ink = css("--ink");
-    var inkFaint = css("--ink-faint");
-    var grid = css("--chart-grid");
-    var bar = css("--chart-bar-alpha") || css("--chart-bar");
-    var ciColor = css("--chart-ci");
-
-    var plot = Plot.plot({
-      width: box.clientWidth || 640,
-      height: rows.length * 64 + 40,
-      marginLeft: 132,
-      marginRight: 24,
-      style: { background: "transparent", fontFamily: fontMono, fontSize: 12, color: inkFaint },
-      x: {
-        domain: [0, data.axisMax],
-        grid: true,
-        label: null,
-        ticks: 5,
+  function buildChart() {
+    var s = getComputedStyle(document.documentElement);
+    var get = function (name) { return s.getPropertyValue(name).trim(); };
+    return new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: data.metricName,
+            data: data.means,
+            backgroundColor: get("--chart-bar-alpha") || get("--chart-bar"),
+            borderRadius: 3,
+            barThickness: 26,
+          },
+        ],
       },
-      y: { domain: rows.map(function (r) { return r.label; }), label: null },
-      marks: [
-        Plot.gridX({ stroke: grid, strokeOpacity: 1 }),
-        Plot.barX(rows, {
-          x: "mean",
-          y: "label",
-          fill: bar,
-          rx: 3,
-          insetTop: 10,
-          insetBottom: 10,
-        }),
-        Plot.ruleY(rows, {
-          y: "label",
-          x1: "ci_low",
-          x2: "ci_high",
-          stroke: ciColor,
-          strokeOpacity: 0.65,
-          strokeWidth: 2,
-        }),
-        Plot.tickX(rows, { y: "label", x: "ci_low", stroke: ciColor, strokeOpacity: 0.65, strokeWidth: 2 }),
-        Plot.tickX(rows, { y: "label", x: "ci_high", stroke: ciColor, strokeOpacity: 0.65, strokeWidth: 2 }),
-        Plot.text(rows, {
-          x: "mean",
-          y: "label",
-          text: function (r) { return r.mean.toFixed(3); },
-          dx: 14,
-          fill: ink,
-          fontFamily: fontMono,
-          fontWeight: 600,
-          fontSize: 13,
-          textAnchor: "start",
-        }),
-        Plot.tip(
-          rows,
-          Plot.pointer({
-            x: "mean",
-            y: "label",
-            title: function (r) {
-              return (
-                data.metricName + ": " + r.mean.toFixed(3) +
-                "\n95% CI: [" + r.ci_low.toFixed(3) + ", " + r.ci_high.toFixed(3) + "]" +
-                "\nn = " + r.n
-              );
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: reducedMotion ? false : { duration: 550, easing: "easeOutQuart" },
+        layout: { padding: { right: 12 } },
+        scales: {
+          x: {
+            min: 0,
+            max: data.axisMax,
+            grid: { color: get("--chart-grid"), drawTicks: false },
+            border: { display: false },
+            ticks: { color: get("--ink-faint"), font: { family: get("--font-mono"), size: 11 } },
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: get("--ink"), font: { family: get("--font-mono"), size: 12, weight: "600" } },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: get("--surface"),
+            titleColor: get("--ink"),
+            bodyColor: get("--ink-muted"),
+            borderColor: get("--border"),
+            borderWidth: 1,
+            padding: 10,
+            titleFont: { family: get("--font-mono"), size: 12 },
+            bodyFont: { family: get("--font-mono"), size: 11 },
+            callbacks: {
+              label: function (ctx) {
+                var i = ctx.dataIndex;
+                return [
+                  data.metricName + ": " + data.means[i].toFixed(3),
+                  "95% CI: [" + data.ci_low[i].toFixed(3) + ", " + data.ci_high[i].toFixed(3) + "]",
+                  "n = " + data.ns[i],
+                ];
+              },
+              title: function () { return ""; },
             },
-          })
-        ),
-      ],
+          },
+        },
+      },
+      plugins: [ciWhiskerPlugin],
     });
-
-    plot.style.fontFamily = fontBody;
-    box.appendChild(plot);
   }
 
-  render();
-  window.addEventListener("resize", debounce(render, 200));
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  var chart = buildChart();
 
-  function debounce(fn, ms) {
-    var t;
-    return function () {
-      clearTimeout(t);
-      t = setTimeout(fn, ms);
-    };
-  }
+  // Chart.js bakes colors in at construction time, so a light/dark toggle
+  // needs a full rebuild rather than a live restyle.
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    chart.destroy();
+    chart = buildChart();
+  });
 })();
