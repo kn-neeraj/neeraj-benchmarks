@@ -37,50 +37,37 @@ def status_badge(status):
 
 def render_index(experiments):
     template = (TEMPLATES_DIR / "index.html").read_text()
-    cards = []
-    for exp in experiments:
+    rows = []
+    for i, exp in enumerate(experiments, start=1):
         best = max(exp["results"], key=lambda r: r["mean"]) if exp.get("results") else None
-        headline = (
-            f'{esc(best["name"])} leads at {best["mean"]:.3f}' if best else ""
-        )
-        cards.append(f"""
-        <a class="card" href="experiments/{esc(exp['_slug'])}/">
-          <div class="card-top">
-            <span class="card-category">{esc(exp.get('category', ''))}</span>
-            {status_badge(exp.get('status'))}
+        headline = f'{esc(best["name"])} &middot; {best["mean"]:.3f}' if best else ""
+        rows.append(f"""
+        <a class="index-row" href="experiments/{esc(exp['_slug'])}/" data-reveal data-reveal-group="index">
+          <span class="index-num">{i:02d}</span>
+          <div class="index-main">
+            <div class="index-top-line">
+              <span class="index-category">{esc(exp.get('category', ''))}</span>
+              {status_badge(exp.get('status'))}
+            </div>
+            <h2 class="index-title">{esc(exp['title'])}</h2>
+            <p class="index-summary">{esc(exp['summary'])}</p>
           </div>
-          <h2>{esc(exp['title'])}</h2>
-          <p class="card-summary">{esc(exp['summary'])}</p>
-          <div class="card-footer">
-            <span class="card-headline">{headline}</span>
-            <span class="card-date">{esc(exp.get('date', ''))}</span>
+          <div class="index-side">
+            <span class="index-headline">{headline}</span>
+            <span class="index-date">{esc(exp.get('date', ''))}</span>
+            <span class="index-arrow">&rarr;</span>
           </div>
         </a>""")
-    return template.replace("{{CARDS}}", "\n".join(cards)).replace(
+    return template.replace("{{CARDS}}", "\n".join(rows)).replace(
         "{{COUNT}}", str(len(experiments))
     )
 
 
-def render_experiment(exp):
+def render_experiment(exp, index):
     template = (TEMPLATES_DIR / "experiment.html").read_text()
 
     rows = []
-    max_mean = max((r["mean"] for r in exp["results"]), default=1) or 1
-    bars = []
     for r in exp["results"]:
-        pct = round(100 * r["mean"] / max_mean, 1)
-        ci_low_pct = round(100 * r["ci_low"] / max_mean, 1)
-        ci_high_pct = round(100 * r["ci_high"] / max_mean, 1)
-        bars.append(f"""
-        <div class="bar-row">
-          <div class="bar-label">{esc(r['name'])}</div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width:{pct}%"></div>
-            <div class="bar-ci" style="left:{ci_low_pct}%; width:{max(ci_high_pct - ci_low_pct, 0.5)}%"
-                 title="95% CI [{r['ci_low']:.3f}, {r['ci_high']:.3f}]"></div>
-          </div>
-          <div class="bar-value">{r['mean']:.3f}</div>
-        </div>""")
         rows.append(f"""
         <tr>
           <td>{esc(r['name'])}</td>
@@ -92,12 +79,30 @@ def render_experiment(exp):
     notes = "".join(f"<li>{esc(n)}</li>" for n in exp.get("notes", []))
     metric = exp.get("metric", {})
 
+    axis_max = max((r["ci_high"] for r in exp["results"]), default=1)
+    metric_range = metric.get("range")
+    if metric_range and len(metric_range) == 2:
+        axis_max = metric_range[1]
+    else:
+        axis_max = round(axis_max * 1.15, 2)
+
+    results_json = json.dumps({
+        "labels": [r["name"] for r in exp["results"]],
+        "means": [r["mean"] for r in exp["results"]],
+        "ci_low": [r["ci_low"] for r in exp["results"]],
+        "ci_high": [r["ci_high"] for r in exp["results"]],
+        "ns": [r["n"] for r in exp["results"]],
+        "metricName": metric.get("name", "Score"),
+        "axisMax": axis_max,
+    })
+
     out = template
     out = out.replace("{{TITLE}}", esc(exp["title"]))
     out = out.replace("{{SUMMARY}}", esc(exp["summary"]))
     out = out.replace("{{STATUS_BADGE}}", status_badge(exp.get("status")))
     out = out.replace("{{DATE}}", esc(exp.get("date", "")))
     out = out.replace("{{CATEGORY}}", esc(exp.get("category", "")))
+    out = out.replace("{{INDEX}}", f"{index:02d}")
     out = out.replace("{{TASK_DESCRIPTION}}", esc(exp.get("task_description", "")))
     out = out.replace("{{METRIC_NAME}}", esc(metric.get("name", "")))
     out = out.replace("{{METRIC_DESCRIPTION}}", esc(metric.get("description", "")))
@@ -105,9 +110,9 @@ def render_experiment(exp):
     out = out.replace("{{DATASET_URL}}", esc(exp.get("dataset", {}).get("url", "#")))
     out = out.replace("{{DATASET_LICENSE}}", esc(exp.get("dataset", {}).get("license", "")))
     out = out.replace("{{METHODOLOGY_URL}}", esc(exp.get("methodology_url", "#")))
-    out = out.replace("{{BARS}}", "\n".join(bars))
     out = out.replace("{{ROWS}}", "\n".join(rows))
     out = out.replace("{{NOTES}}", notes)
+    out = out.replace("{{RESULTS_JSON}}", results_json)
     return out
 
 
@@ -115,15 +120,15 @@ def main():
     experiments = load_experiments()
     DOCS_DIR.mkdir(exist_ok=True)
 
-    style = (TEMPLATES_DIR / "style.css").read_text()
-    (DOCS_DIR / "style.css").write_text(style)
+    for asset in ("style.css", "main.js", "chart.js"):
+        (DOCS_DIR / asset).write_text((TEMPLATES_DIR / asset).read_text())
 
     (DOCS_DIR / "index.html").write_text(render_index(experiments))
 
-    for exp in experiments:
+    for i, exp in enumerate(experiments, start=1):
         exp_dir = DOCS_DIR / "experiments" / exp["_slug"]
         exp_dir.mkdir(parents=True, exist_ok=True)
-        (exp_dir / "index.html").write_text(render_experiment(exp))
+        (exp_dir / "index.html").write_text(render_experiment(exp, i))
 
     (DOCS_DIR / ".nojekyll").write_text("")
     print(f"Generated site for {len(experiments)} experiment(s) into {DOCS_DIR}")

@@ -1,34 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Neeraj's Benchmarks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="site-header">
-    <h1>Benchmarks</h1>
-    <p class="subtitle">Comparing models, harnesses, and prompts on real datasets. 1 experiment(s) so far.</p>
-    <a class="repo-link" href="https://github.com/kn-neeraj/neeraj-benchmarks">Source on GitHub &rarr;</a>
-  </header>
-  <main class="card-grid">
-    
-        <a class="card" href="experiments/mathtutorbench-eval/">
-          <div class="card-top">
-            <span class="card-category">model-comparison</span>
-            <span class="badge badge-in-progress">In progress</span>
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="wordmark" href=".">NEERAJ/BENCHMARKS</a>
+      <a class="topbar-link" href="https://github.com/kn-neeraj/neeraj-benchmarks">SOURCE &rarr;</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <span class="eyebrow" data-reveal><span class="accent-num">1</span> EXPERIMENT(S) &middot; UPDATED CONTINUOUSLY</span>
+      <h1 data-reveal>Models, harnesses<br>&amp; datasets, tested.</h1>
+      <p class="hero-sub" data-reveal>Open benchmark experiments comparing models, agent harnesses, and prompting strategies &mdash; real data, published methodology, no vendor spin.</p>
+    </section>
+
+    <section>
+      <div class="index-list">
+        
+        <a class="index-row" href="experiments/mathtutorbench-eval/" data-reveal data-reveal-group="index">
+          <span class="index-num">01</span>
+          <div class="index-main">
+            <div class="index-top-line">
+              <span class="index-category">model-comparison</span>
+              <span class="badge badge-in-progress">In progress</span>
+            </div>
+            <h2 class="index-title">MathTutorBench: Hard Scaffolding</h2>
+            <p class="index-summary">Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher&#x27;s response.</p>
           </div>
-          <h2>MathTutorBench: Hard Scaffolding</h2>
-          <p class="card-summary">Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher&#x27;s response.</p>
-          <div class="card-footer">
-            <span class="card-headline">GLM-5.2 leads at 0.694</span>
-            <span class="card-date">2026-08-30</span>
+          <div class="index-side">
+            <span class="index-headline">GLM-5.2 &middot; 0.694</span>
+            <span class="index-date">2026-08-30</span>
+            <span class="index-arrow">&rarr;</span>
           </div>
         </a>
-  </main>
+      </div>
+    </section>
+  </div>
+
   <footer class="site-footer">
-    <p>Generated statically from <code>site-data.json</code> files in <code>experiments/</code>. No tracking, no backend.</p>
+    <div class="wrap">Generated statically from <code>site-data.json</code> files in <code>experiments/</code>. No tracking, no backend.</div>
   </footer>
+
+  <script src="main.js"></script>
 </body>
 </html>

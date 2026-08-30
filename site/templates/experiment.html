@@ -1,38 +1,53 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{TITLE}} · Neeraj's Benchmarks</title>
+  <title>{{TITLE}} &middot; Neeraj's Benchmarks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
-  <header class="site-header exp-header">
-    <a class="back-link" href="../../">&larr; All experiments</a>
-    <div class="exp-title-row">
-      <h1>{{TITLE}}</h1>
-      {{STATUS_BADGE}}
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="wordmark" href="../..">NEERAJ/BENCHMARKS</a>
+      <a class="topbar-link" href="{{METHODOLOGY_URL}}">CODE &rarr;</a>
     </div>
-    <p class="subtitle">{{SUMMARY}}</p>
-    <p class="exp-meta">{{CATEGORY}} &middot; {{DATE}}</p>
-  </header>
+  </div>
 
-  <main class="exp-main">
-    <section>
-      <h2>Task</h2>
+  <div class="wrap">
+    <a class="back-link" href="../..">&larr; ALL EXPERIMENTS</a>
+
+    <header class="exp-hero">
+      <span class="eyebrow">EXPERIMENT <span class="accent-num">{{INDEX}}</span> &middot; {{CATEGORY}} &middot; {{STATUS_BADGE}}</span>
+      <h1>{{TITLE}}</h1>
+      <p class="exp-hero-sub">{{SUMMARY}}</p>
+      <div class="exp-meta-row">
+        <span class="exp-meta">{{DATE}}</span>
+      </div>
+    </header>
+
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">01</span><h2>Task</h2></div>
       <p>{{TASK_DESCRIPTION}}</p>
     </section>
 
-    <section>
-      <h2>Results &mdash; {{METRIC_NAME}}</h2>
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">02</span><h2>Results &mdash; {{METRIC_NAME}}</h2></div>
       <p class="metric-description">{{METRIC_DESCRIPTION}}</p>
-      <div class="bar-chart">
-        {{BARS}}
+
+      <div class="chart-wrap">
+        <div class="chart-canvas-box"><canvas id="results-chart"></canvas></div>
+        <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
+        <div class="chart-legend">
+          <span><span class="legend-swatch"></span> Mean</span>
+          <span><span class="legend-swatch ci"></span> 95% confidence interval</span>
+        </div>
       </div>
-      <div class="chart-legend">
-        <span><span class="legend-swatch"></span> Mean</span>
-        <span><span class="legend-swatch ci"></span> 95% confidence interval</span>
-      </div>
+      <script type="application/json" id="results-data">{{RESULTS_JSON}}</script>
+
       <table class="results-table">
         <thead>
           <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
@@ -43,21 +58,33 @@
       </table>
     </section>
 
-    <section>
-      <h2>Dataset</h2>
-      <p><a href="{{DATASET_URL}}">{{DATASET_NAME}}</a> &middot; License: {{DATASET_LICENSE}}</p>
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">03</span><h2>Methodology</h2></div>
+      <div class="steps">
+        <div class="step" data-reveal data-reveal-group="steps">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <h3>Dataset</h3>
+            <p><a href="{{DATASET_URL}}">{{DATASET_NAME}}</a> &middot; License: {{DATASET_LICENSE}}</p>
+          </div>
+        </div>
+        <div class="step" data-reveal data-reveal-group="steps">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <h3>Notes &amp; limitations</h3>
+            <ul>{{NOTES}}</ul>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <h2>Notes</h2>
-      <ul class="notes-list">
-        {{NOTES}}
-      </ul>
+    <section class="section" style="border-bottom: none;">
+      <a class="methodology-link" href="{{METHODOLOGY_URL}}">FULL METHODOLOGY &amp; CODE &rarr;</a>
     </section>
+  </div>
 
-    <section>
-      <a class="methodology-link" href="{{METHODOLOGY_URL}}">Full methodology &amp; code &rarr;</a>
-    </section>
-  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="../../main.js"></script>
+  <script src="../../chart.js"></script>
 </body>
 </html>
