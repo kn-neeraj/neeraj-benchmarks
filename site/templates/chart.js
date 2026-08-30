@@ -110,10 +110,13 @@
 
   var chart = buildChart();
 
-  // Chart.js bakes colors in at construction time, so a light/dark toggle
-  // needs a full rebuild rather than a live restyle.
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+  // Chart.js bakes colors in at construction time, so a theme switch needs
+  // a full rebuild rather than a live restyle. Covers both the OS setting
+  // changing and the manual toggle in theme.js (which fires "themechange").
+  function rebuild() {
     chart.destroy();
     chart = buildChart();
-  });
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rebuild);
+  window.addEventListener("themechange", rebuild);
 })();

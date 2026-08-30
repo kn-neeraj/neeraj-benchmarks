@@ -29,8 +29,12 @@
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+/* Dark palette applies when the OS prefers dark AND the user hasn't
+   explicitly chosen light via the toggle, OR when the toggle has
+   explicitly chosen dark -- so a manual choice always wins over the OS
+   setting, in either direction. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0a0a0b;
     --surface: #121213;
     --surface-hover: #1a1a1c;
@@ -55,6 +59,31 @@
 
     --shadow-row: 0 1px 0 var(--border);
   }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0a0b;
+  --surface: #121213;
+  --surface-hover: #1a1a1c;
+  --border: #26262a;
+  --border-strong: #38383e;
+  --ink: #f2f0ea;
+  --ink-muted: #aaa9a2;
+  --ink-faint: #78776f;
+  --accent: #ff6a3d;
+  --accent-ink: #ff8a5e;
+  --accent-soft: #2c1710;
+
+  --badge-complete-bg: #16281a;
+  --badge-complete-fg: #7dd88a;
+  --badge-progress-bg: #2c1710;
+  --badge-progress-fg: #ff8a5e;
+
+  --chart-grid: #232326;
+  --chart-bar: #ff6a3d;
+  --chart-bar-alpha: rgba(255, 106, 61, 0.85);
+  --chart-ci: #f2f0ea;
+
+  --shadow-row: 0 1px 0 var(--border);
 }
 
 * { box-sizing: border-box; }
@@ -111,6 +140,27 @@ code {
   color: var(--ink-muted);
 }
 .topbar-link:hover { color: var(--accent-ink); text-decoration: none; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+.theme-toggle {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+  transition: color 180ms var(--ease-out-expo), border-color 180ms var(--ease-out-expo);
+}
+.theme-toggle:hover { color: var(--accent-ink); border-color: var(--border-strong); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- hero ---------- */
 

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{TITLE}} &middot; Neeraj's Benchmarks</title>
+  <script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,8 +13,11 @@
 <body>
   <div class="topbar">
     <div class="wrap topbar-inner">
-      <a class="wordmark" href="../..">NEERAJ/BENCHMARKS</a>
-      <a class="topbar-link" href="{{METHODOLOGY_URL}}">CODE &rarr;</a>
+      <a class="wordmark" href="../..">Neeraj Benchmarks</a>
+      <div class="topbar-right">
+        <button class="theme-toggle" id="theme-toggle" type="button">DARK</button>
+        <a class="topbar-link" href="{{METHODOLOGY_URL}}">CODE &rarr;</a>
+      </div>
     </div>
   </div>
 
@@ -84,6 +88,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="../../theme.js"></script>
   <script src="../../main.js"></script>
   <script src="../../chart.js"></script>
 </body>

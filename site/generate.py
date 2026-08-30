@@ -127,7 +127,7 @@ def main():
     experiments = load_experiments()
     DOCS_DIR.mkdir(exist_ok=True)
 
-    for asset in ("style.css", "main.js", "chart.js"):
+    for asset in ("style.css", "main.js", "chart.js", "theme.js"):
         (DOCS_DIR / asset).write_text((TEMPLATES_DIR / asset).read_text())
 
     (DOCS_DIR / "index.html").write_text(render_index(experiments))
