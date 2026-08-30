@@ -1,15 +1,15 @@
 document.documentElement.classList.remove("no-js");
 
-// Scroll-reveal for [data-reveal] elements, staggered by DOM order within
-// their parent. Skips entirely under prefers-reduced-motion (CSS already
-// shows everything by default in that case).
+// Scroll-reveal for [data-reveal] elements (index rows, methodology steps).
+// These are visible by default in CSS; this only adds a fade-up
+// enhancement, and only once an IntersectionObserver is actually about to
+// watch each element -- so there is never a window where content is
+// hidden without something committed to eventually showing it.
 (function reveal() {
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var items = document.querySelectorAll("[data-reveal]");
-  if (reduced || !("IntersectionObserver" in window)) {
-    items.forEach(function (el) { el.classList.add("is-visible"); });
-    return;
-  }
+  if (reduced || !items.length || !("IntersectionObserver" in window)) return;
+
   var groups = {};
   items.forEach(function (el) {
     var key = el.dataset.revealGroup || "default";
@@ -20,6 +20,7 @@ document.documentElement.classList.remove("no-js");
       el.style.transitionDelay = Math.min(i * 60, 420) + "ms";
     });
   });
+
   var io = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
@@ -31,5 +32,14 @@ document.documentElement.classList.remove("no-js");
     },
     { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
   );
-  items.forEach(function (el) { io.observe(el); });
+
+  items.forEach(function (el) {
+    el.classList.add("js-reveal-ready");
+    io.observe(el);
+  });
 })();
+
+// Stagger the hero's CSS entrance animation via --enter-i.
+document.querySelectorAll("[data-enter]").forEach(function (el, i) {
+  el.style.setProperty("--enter-i", i);
+});

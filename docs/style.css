@@ -145,17 +145,39 @@ code {
   margin: 0 0 1.75rem;
 }
 
-/* ---------- reveal-on-scroll ---------- */
+/* ---------- entrance animation (hero, CSS-only) ---------- */
+/* A plain CSS animation runs on paint regardless of JS timing, so the
+   hero is never gated behind a script/IntersectionObserver callback that
+   might not have fired yet when something (a headless renderer, a fast
+   screenshot) reads the page. */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-enter] {
+  animation: fade-up 560ms var(--ease-out-expo) both;
+  animation-delay: calc(var(--enter-i, 0) * 70ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-enter] { animation: none; }
+}
+
+/* ---------- reveal-on-scroll (below-the-fold rows, JS-enhanced) ---------- */
+/* Visible by default -- JS only adds the fade-up enhancement. If JS is
+   blocked or slow, content is already there; nothing depends on a
+   callback firing. */
 
 [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+[data-reveal].js-reveal-ready {
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 560ms var(--ease-out-expo), transform 560ms var(--ease-out-expo);
 }
-[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
-@media (prefers-reduced-motion: reduce) {
-  [data-reveal] { opacity: 1; transform: none; transition: none; }
-}
+[data-reveal].js-reveal-ready.is-visible { opacity: 1; transform: translateY(0); }
 
 /* ---------- numbered index list (no cards) ---------- */
 
