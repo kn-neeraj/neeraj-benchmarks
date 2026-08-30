@@ -456,4 +456,9 @@ code {
   color: var(--ink-faint);
   font-family: var(--font-mono);
   font-size: 0.78rem;
+  border-top: 1px solid var(--border);
 }
+.site-footer p { margin: 0 0 0.5rem; }
+.site-footer p:last-child { margin-bottom: 0; }
+.site-footer a { color: var(--ink-faint); text-decoration: underline; text-underline-offset: 2px; }
+.site-footer a:hover { color: var(--accent-ink); }
