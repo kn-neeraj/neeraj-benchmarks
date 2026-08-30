@@ -39,7 +39,7 @@
       <p class="metric-description">0–1 score from an LLM judge (Qwen3.8-Max) comparing the model&#x27;s turn to the real human teacher&#x27;s turn; 0.50 means judged equal to the human.</p>
 
       <div class="chart-wrap">
-        <div class="chart-canvas-box"><canvas id="results-chart"></canvas></div>
+        <div id="results-chart" class="chart-canvas-box"></div>
         <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
         <div class="chart-legend">
           <span><span class="legend-swatch"></span> Mean</span>
@@ -103,7 +103,7 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.17/dist/plot.umd.min.js"></script>
   <script src="../../main.js"></script>
   <script src="../../chart.js"></script>
 </body>

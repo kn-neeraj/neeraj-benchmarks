@@ -39,7 +39,7 @@
       <p class="metric-description">{{METRIC_DESCRIPTION}}</p>
 
       <div class="chart-wrap">
-        <div class="chart-canvas-box"><canvas id="results-chart"></canvas></div>
+        <div id="results-chart" class="chart-canvas-box"></div>
         <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
         <div class="chart-legend">
           <span><span class="legend-swatch"></span> Mean</span>
@@ -83,7 +83,7 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.17/dist/plot.umd.min.js"></script>
   <script src="../../main.js"></script>
   <script src="../../chart.js"></script>
 </body>
