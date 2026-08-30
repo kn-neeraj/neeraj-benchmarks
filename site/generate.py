@@ -7,6 +7,7 @@ No external dependencies (stdlib only). Run from repo root:
 """
 import html
 import json
+import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,11 +18,17 @@ TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 def load_experiments():
     experiments = []
+    skipped = []
     for site_data_path in sorted(EXPERIMENTS_DIR.glob("*/site-data.json")):
         data = json.loads(site_data_path.read_text())
         data["_slug"] = site_data_path.parent.name
+        if data.get("draft"):
+            skipped.append(data["_slug"])
+            continue
         experiments.append(data)
     experiments.sort(key=lambda e: e.get("date", ""), reverse=True)
+    if skipped:
+        print(f"Skipping draft experiment(s) (not published to site): {', '.join(skipped)}")
     return experiments
 
 
@@ -125,10 +132,22 @@ def main():
 
     (DOCS_DIR / "index.html").write_text(render_index(experiments))
 
+    published_slugs = set()
     for i, exp in enumerate(experiments, start=1):
         exp_dir = DOCS_DIR / "experiments" / exp["_slug"]
         exp_dir.mkdir(parents=True, exist_ok=True)
         (exp_dir / "index.html").write_text(render_experiment(exp, i))
+        published_slugs.add(exp["_slug"])
+
+    # Remove any previously-generated experiment page that's no longer
+    # published (draft flipped on, site-data.json deleted, etc.) so stale
+    # pages don't linger in docs/.
+    docs_experiments_dir = DOCS_DIR / "experiments"
+    if docs_experiments_dir.exists():
+        for stale_dir in docs_experiments_dir.iterdir():
+            if stale_dir.is_dir() and stale_dir.name not in published_slugs:
+                shutil.rmtree(stale_dir)
+                print(f"Removed stale generated page: docs/experiments/{stale_dir.name}")
 
     (DOCS_DIR / ".nojekyll").write_text("")
     print(f"Generated site for {len(experiments)} experiment(s) into {DOCS_DIR}")

@@ -4,6 +4,7 @@
   "summary": "Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher's response.",
   "date": "2026-08-30",
   "status": "in-progress",
+  "draft": true,
   "category": "model-comparison",
   "dataset": {
     "name": "MathTutorBench (hard scaffolding subset)",

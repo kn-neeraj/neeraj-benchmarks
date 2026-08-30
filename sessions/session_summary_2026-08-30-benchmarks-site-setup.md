@@ -1,0 +1,55 @@
+---
+date: 2026-08-30
+title: Benchmarks monorepo and GitHub Pages site setup
+files_touched: [README.md, .gitignore, experiments/mathtutorbench-eval/ (moved + .gitignore fix), site/generate.py, site/templates/style.css, site/templates/index.html, site/templates/experiment.html, site/templates/main.js, site/templates/chart.js, docs/ (generated output)]
+short_summary: Set up kn-neeraj/neeraj-benchmarks as the git repo for benchmarks/, with experiments/<slug>/ as the convention and a stdlib-only Python static-site generator publishing to docs/ via GitHub Pages (main branch, /docs folder). Redesigned the site twice on user feedback (generic default styling -> editorial/1kpapers.com-inspired design with Chart.js CI-whisker bar charts), fixed a real hero-visibility bug from JS-gated reveal animations, evaluated and reverted an Observable Plot swap (dependency complexity + false-flaky test results caused by GitHub Pages deploy propagation lag, not a real bug), and clarified the intended git workflow: branches for organization/history, git worktree for genuinely concurrent experiments, site-data.json + regenerated docs/ as the deliberate publish gate.
+---
+
+# Session Summary — 2026-08-30
+
+## Detailed Summary
+
+**Goal:** Turn `~/Documents/ai-projects/benchmarks` into an open-source monorepo of independent benchmark experiments (model comparisons, harness comparisons, dataset evals), publishing a Braintrust-`/evals`-style static site via GitHub Pages, showcasing each experiment with a data-driven detail page similar to `braintrust.dev/evals/kimi-k3-deepseek-v4`.
+
+**Initial setup:**
+- Cloned/merged `kn-neeraj/neeraj-benchmarks` (GitHub repo, one placeholder commit) into the existing local `benchmarks/` folder as the repo root (`git init` + `git remote add` + `git merge --allow-unrelated-histories`).
+- Established the convention: `experiments/<slug>/` holds each experiment's own code/data/README; a small committed `site-data.json` per experiment (title, summary, dataset+license, metric definition, results array with mean/ci_low/ci_high/n, methodology_url) is the only thing the site generator reads — raw heavy outputs (`generations.jsonl`, logs) stay gitignored.
+- Moved the user's in-flight `mathtutorbench-eval/` project (comparing GLM-5.2 / DeepSeek-V4-Flash / Kimi-K3 on MathTutorBench hard-scaffolding, judged by Qwen3.8-Max) into `experiments/mathtutorbench-eval/`, wrote its first `site-data.json` from `results/summary.csv`.
+- Built `site/generate.py`: a stdlib-only Python generator (deliberately no Jinja2/Node — matches "keep it simple") that reads `experiments/*/site-data.json` and renders `docs/index.html` (card/list of experiments) + `docs/experiments/<slug>/index.html` (detail page with chart), plus copies `style.css`/`main.js`/`chart.js` into `docs/`.
+- Enabled GitHub Pages via `gh api` on `main` branch, `/docs` folder. Live at `https://kn-neeraj.github.io/neeraj-benchmarks/`.
+
+**First design pass (generic, then fixed for contrast):**
+- Initial styling used default-ish tokens; user reported dark mode "looks bad" and the CI indicator on the bar chart read as a rendering glitch (a semi-transparent rectangle overlapping the bar fill).
+- Rewrote with a contrast-checked light/dark palette, proper card elevation, and a redesigned CI whisker (line + end caps) — verified via live GitHub Pages screenshots in both themes (browser-pane `file://` static-snapshot mode doesn't load external CSS reliably, so verification was done against the deployed site, not local files).
+
+**Second design pass (editorial redesign, `/compound-engineering:frontend-design` skill):**
+- User pushed back again: "this looks really bad… look at beautiful websites like 1kpapers.com."
+- Researched 1kpapers.com's visual language: huge condensed grotesk headline, monospace data/eyebrow labels, single coral/red accent, cardless numbered list sections ("01 Trending…"), numbered methodology steps, real inline benchmark tables.
+- Rebuilt around that: Big Shoulders Display (headline) + IBM Plex Sans (body) + IBM Plex Mono (data/index labels) via Google Fonts; cardless numbered `index-row` list replacing the card grid; numbered methodology section (Dataset / Notes as "01 / 02"); single coral accent tuned for both themes; staggered entrance + scroll-reveal + row-hover motion.
+- **Caught and fixed a real bug of its own making:** the hero (above-the-fold headline/subtitle) was gated behind a JS `IntersectionObserver` class toggle — fragile because the callback is async and may not have fired when something reads the page quickly (a screenshot, a crawler), leaving text stuck near-invisible. Fixed per the design skill's explicit guidance: hero uses a plain CSS `@keyframes` entrance with no JS dependency (stagger index set via server-rendered inline `style="--enter-i:N"`, not JS, to avoid a mid-animation custom-property-update race); below-the-fold rows are visible-by-default in CSS with JS only adding a fade-up enhancement, never gating default visibility.
+- Also caught mid-flight: a parallel Claude session (the user's own MathTutorBench run, live in the same working directory) had created `experiments/mathtutorbench-eval/.venv_new/` (uncovered by the existing `.gitignore`) and was mid-reorganizing `experiments/mathtutorbench-eval/experiments/reasoning_effort_medium/results/`. Deliberately scoped every `git add` to `docs/` and `site/` only, leaving the other session's in-progress files untouched and uncommitted.
+
+**Chart library investigation:**
+- User asked whether a "proper" charting library was available; recommended Observable Plot (SVG output, inherits page fonts/colors, native error-bar support) over the existing hand-rolled Chart.js CI-whisker plugin as more visually "elegant" for the editorial direction, while confirming both are CDN-only/no-build-step and thus GitHub-Pages-compatible.
+- Implemented the Plot swap, but hit `Plot.gridX is not a function` / d3 `timeSecond` errors — root cause: Plot's UMD build requires `d3` as a **separate, unbundled peer script** (`require("d3@7.9.0/...")` inside the UMD factory), contradicting the "self-contained" assumption. Added a `d3@7.9.0` CDN script before Plot's.
+- Testing then showed apparent intermittent blank-chart failures even with d3 loaded. After extensive diagnosis (added temporary `window.__chartDiag` instrumentation, traced through `document.scripts`, `Chart.instances`, manual `fetch`+`eval` reproduction), the actual root cause was **GitHub Pages' Fastly-backed deploy propagation lag**: the Pages API reports a deployment "built" before the content is fully live at the serving origin (confirmed via `Age: 0` response headers still returning stale content shortly after a build). The "flakiness" was largely a testing-methodology artifact from checking too soon after each push, not a confirmed library defect.
+- Regardless of that finding, **reverted to Chart.js** (restored from git history) on simplicity grounds per the user's explicit "I want to keep it simple" — one self-contained ~200KB script vs. two scripts (~500KB total) with a peer-dependency footgun. Removed the diagnostic instrumentation afterward. Final verified state: single `chart.umd.min.js` CDN script, CI-whisker plugin intact, renders correctly.
+
+**Git/workflow discussion (no code changes, pure Q&A):**
+- Clarified GitHub Pages config: `main` branch, `/docs` folder, no Actions workflow, no `gh-pages` branch.
+- Explained the recommended experiment workflow: single experiment at a time needs no branch (raw outputs are gitignored, so nothing publishes until `site-data.json` is deliberately written and `site/generate.py` is run and `docs/` is committed+pushed); a branch is useful for a risky/exploratory experiment you might scrap before merging to `main`; **`git worktree`** (not just a branch) is the right tool for genuinely *concurrent* experiments, since checking out a different branch does not isolate the filesystem — two processes in the same working directory can still collide, which is exactly what happened with the `.venv_new` incident above.
+- Confirmed the publish gate precisely: `experiments/<slug>/` folders can exist freely and hold in-progress work; the website only reflects an experiment once **both** `site-data.json` exists **and** `site/generate.py` has been run and the regenerated `docs/` output has been committed and pushed to `main`. Merging to `main` alone (without regenerating `docs/`) makes the code visible in the public repo but does not change the live site.
+
+## Open Questions
+- Should `experiments/mathtutorbench-eval/.gitignore` be updated to also exclude `.venv_new/`? Deliberately left untouched this session since the user's parallel MathTutorBench session was actively working in that exact folder — flagged to the user but not fixed.
+- The user's parallel MathTutorBench run (reasoning-effort conditions, model comparison) was still in progress at end of session; its results are not yet reflected in `experiments/mathtutorbench-eval/site-data.json` (which still only shows the `reasoning_effort=none` condition from earlier in the day).
+- No second experiment has been started yet (speech-to-text dictation comparison and harness-on-terminal-bench were mentioned as planned but not begun), so the multi-experiment/worktree workflow discussed has not yet been exercised in practice.
+
+## Decisions Made
+- **Repo root = `benchmarks/` itself**, not a subfolder — matches "clone it here." Merged the remote's placeholder initial commit via `--allow-unrelated-histories` rather than starting fresh.
+- **`experiments/<slug>/site-data.json`** is the sole contract between an experiment and the website — keeps the generator generic across very different benchmark types (math tutoring, STT, harness comparisons) without per-experiment custom rendering code.
+- **Stdlib-only Python generator**, no Jinja2/Node — avoids adding a dependency just for HTML templating, consistent with keeping the project simple.
+- **Commit `docs/` directly** rather than adding a GitHub Actions build step — simplest possible Pages setup; can revisit if the workflow becomes painful.
+- **Chart.js over Observable Plot** — despite Plot's nicer SVG/editorial fit, one self-contained CDN script beats two scripts with a peer-dependency requirement, per the user's explicit simplicity preference. This was decided independently of (and confirmed to still hold after) discovering the "flakiness" was a testing artifact, not a real Plot defect.
+- **`git worktree` recommended over plain branches for concurrent experiments** — a branch changes files in the same folder; only a worktree (or a separate clone) gives real filesystem isolation between simultaneously-running experiments.
+- **Session summaries go in a top-level `sessions/` folder**, not `docs/sessions/` — the skill's default (`docs/sessions/`) would have made internal session notes publicly browsable on the live GitHub Pages site, since `docs/` is fully served output in this repo. User confirmed top-level `sessions/` instead.
