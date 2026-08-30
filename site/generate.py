@@ -76,7 +76,8 @@ def render_experiment(exp):
           <div class="bar-label">{esc(r['name'])}</div>
           <div class="bar-track">
             <div class="bar-fill" style="width:{pct}%"></div>
-            <div class="bar-ci" style="left:{ci_low_pct}%; width:{max(ci_high_pct - ci_low_pct, 0.5)}%"></div>
+            <div class="bar-ci" style="left:{ci_low_pct}%; width:{max(ci_high_pct - ci_low_pct, 0.5)}%"
+                 title="95% CI [{r['ci_low']:.3f}, {r['ci_high']:.3f}]"></div>
           </div>
           <div class="bar-value">{r['mean']:.3f}</div>
         </div>""")
