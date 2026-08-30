@@ -3,11 +3,23 @@
 // data from the #results-data JSON script tag so the same script works for
 // any experiment page.
 (function () {
+  window.__chartDiag = { step: "start" };
+  try {
+    __chartInit();
+  } catch (e) {
+    window.__chartDiag.error = e.message + "\n" + e.stack;
+  }
+
+  function __chartInit() {
+  window.__chartDiag.step = "guard-check";
   var dataEl = document.getElementById("results-data");
+  window.__chartDiag.hasDataEl = !!dataEl;
+  window.__chartDiag.chartType = typeof Chart;
   if (!dataEl || typeof Chart === "undefined") return;
   var data = JSON.parse(dataEl.textContent);
   var canvas = document.getElementById("results-chart");
   if (!canvas) return;
+  window.__chartDiag.step = "guards-passed";
 
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var styles = getComputedStyle(document.documentElement);
@@ -108,7 +120,10 @@
     });
   }
 
+  window.__chartDiag.step = "before-build";
   var chart = buildChart();
+  window.__chartDiag.step = "after-build";
+  window.__chartDiag.instanceId = chart && chart.id;
 
   // Chart.js bakes colors in at construction time, so a light/dark toggle
   // needs a full rebuild rather than a live restyle.
@@ -116,4 +131,6 @@
     chart.destroy();
     chart = buildChart();
   });
+  window.__chartDiag.step = "done";
+  }
 })();
