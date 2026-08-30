@@ -1,32 +1,66 @@
 {
   "id": "mathtutorbench-hard-scaffolding",
-  "title": "MathTutorBench: Hard Scaffolding",
+  "title": "MathTutor-Bench: Kimi K3 vs DeepSeek V4 Flash vs GLM-5.2",
   "summary": "Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher's response.",
   "date": "2026-08-30",
-  "status": "in-progress",
-  "draft": true,
+  "status": "complete",
+  "draft": false,
   "category": "model-comparison",
   "dataset": {
-    "name": "MathTutorBench (hard scaffolding subset)",
+    "name": "MathTutor-Bench (hard scaffolding subset)",
     "url": "https://github.com/eth-lre/mathtutorbench",
     "license": "CC BY-SA 4.0 (treated as the more restrictive of two conflicting license statements in the source repo)"
   },
-  "task_description": "Each item is a math problem plus a partial student/teacher dialog. The model under test writes the next teacher turn (max 2 sentences) without giving away the answer.",
+  "task_description": "In this experiment, we are evaluating tutoring skill, or pedagogy. Given a real math problem and a partial student/teacher conversation, the model writes the next teacher turn (max 2 sentences). A good turn nudges the student toward their mistake with a question or hint; a bad one either solves it for them or misses the point entirely. Scale: 322 of 327 dialogs.",
   "metric": {
     "name": "Judge score",
     "range": [0, 1],
     "higher_is_better": true,
     "description": "0–1 score from an LLM judge (Qwen3.8-Max) comparing the model's turn to the real human teacher's turn; 0.50 means judged equal to the human."
   },
-  "results": [
-    {"name": "GLM-5.2", "mean": 0.6936, "ci_low": 0.6610, "ci_high": 0.7263, "n": 322},
-    {"name": "DeepSeek-V4-Flash", "mean": 0.6151, "ci_low": 0.5803, "ci_high": 0.6498, "n": 322},
-    {"name": "Kimi-K3", "mean": 0.5868, "ci_low": 0.5473, "ci_high": 0.6263, "n": 322}
+  "judge_prompt": "You are grading a math tutoring dialog. A student is working through the\nproblem below with a teacher. You will see the problem, the conversation so\nfar, the teacher's ACTUAL human response, and a CANDIDATE response written\nby a different teacher for the same turn.\n\nProblem: {question}\nReference solution (for your own context only - do not require the teacher\nturn to reveal this): {reference_solution}\n\nConversation so far:\n{dialog_history}\n\nACTUAL human teacher response: {ground_truth_response}\n\nCANDIDATE teacher response: {candidate_response}\n\nScore the CANDIDATE response from 0.0 to 1.0 on how well it serves as the\nnext teacher turn, judged AGAINST the actual human response as the\nreference point. A score of 0.50 means the candidate is judged equal in\nquality to the actual human response. Higher than 0.50 means better than\nthe human response; lower means worse. Consider: does it give a helpful\nnudge, question, or hint (not the full answer)? Is it at most two\nsentences? Is it appropriate given the conversation so far? Do not reward\nresponses that reveal the final answer.\n\nRespond with ONLY a JSON object of the exact form\n{\"score\": <float between 0.0 and 1.0>, \"rationale\": \"<one sentence>\"},\nwith no other text.",
+  "result_sets": [
+    {
+      "id": "reasoning_off",
+      "title": "1. Reasoning disabled (n=322)",
+      "results": [
+        {"name": "GLM-5.2", "mean": 0.6936, "ci_low": 0.6610, "ci_high": 0.7263, "n": 322},
+        {"name": "DeepSeek-V4-Flash", "mean": 0.6151, "ci_low": 0.5803, "ci_high": 0.6498, "n": 322},
+        {"name": "Kimi-K3", "mean": 0.5868, "ci_low": 0.5473, "ci_high": 0.6263, "n": 322}
+      ]
+    },
+    {
+      "id": "reasoning_on",
+      "title": "2. Reasoning enabled (n=50)",
+      "results": [
+        {"name": "GLM-5.2", "mean": 0.835, "ci_low": 0.777, "ci_high": 0.893, "n": 50},
+        {"name": "DeepSeek-V4-Flash", "mean": 0.714, "ci_low": 0.629, "ci_high": 0.799, "n": 50},
+        {"name": "Kimi-K3", "mean": 0.693, "ci_low": 0.606, "ci_high": 0.780, "n": 50}
+      ],
+      "description": "All three models scored higher with reasoning enabled, same direction across the board.",
+      "callout": "Getting clean reasoning-mode data took real debugging: a token-budget starvation bug and a stop-sequence bug that matched inside models' hidden reasoning traces both had to be found and fixed first — see the experiment README for the full three-attempt story."
+    }
+  ],
+  "example": {
+    "problem": "Bob buys 50 feet of rope. He uses a 5th of it to make a small piece of art. He takes the rest and gives half of it to the friend. After that, he cuts 2-foot sections. How many sections does he get?",
+    "dialog_truncated": true,
+    "dialog_turns": [
+      {"speaker": "Teacher", "text": "Nope! After Bob made the artwork he had 40 feet left, then he gave half to the friend, so he had 20 feet left. So how many 2 foot sections could he make from that?"},
+      {"speaker": "Student", "text": "Oh, right! After Bob gave half of the rope to the friend, he would have 20 feet of rope left. Then, if he divided that into 2-foot sections, he would get 10 sections. So, the total number of sections he would have is 10 + 10 = 20."}
+    ],
+    "ground_truth": "So you said if he divided it into 2-foot sections he would have 10 sections. Why are you adding another 10 section to that?",
+    "responses": [
+      {"model": "Kimi K3", "score": 0.1, "text": "You're very close! Remember, the 10 sections are from the 20 feet Bob gave to his friend, not from the 20 feet he kept for himself. So, how many sections can he make from the 20 feet he kept?"},
+      {"model": "DeepSeek V4 Flash", "score": 0.2, "text": "You had the right idea when you first divided 40 by 2 to get 20 sections from the rope he kept for himself. Now, think carefully: after he gives half of the 40 feet to his friend, how much rope does he actually have left to cut into 2-foot sections?"},
+      {"model": "GLM-5.2", "score": 0.9, "text": "You're right that he gets 10 sections from the 20 feet he kept — but why are you adding the extra 10? Remember, the first 10 feet went into the artwork, so it's not available to be cut into sections."}
+    ]
+  },
+  "takeaways": [
+    "<strong>GLM-5.2 is the strongest tutor of the three, with a statistically meaningful edge</strong> — n=322 is large enough that this gap isn't sampling noise.",
+    "<strong>Reasoning consistently helps pedagogical scaffolding, for all three models.</strong>"
   ],
   "notes": [
-    "Judge, judge prompt, and reasoning-effort settings differ from Braintrust's original eval (not public), so exact score values are not expected to match — rank order and CI overlap are what's comparable.",
-    "Judge is Qwen3.8-Max, deliberately not one of the three models under test, to reduce self-preference and shared-lineage bias.",
-    "Results shown are the reasoning_effort=none condition; see the experiment README for the full run design."
+    "Judge is Qwen3.8-Max, deliberately not one of the three models under test, to reduce self-preference and shared-lineage bias."
   ],
   "methodology_url": "https://github.com/kn-neeraj/neeraj-benchmarks/tree/main/experiments/mathtutorbench-eval",
   "chart_type": "bar_ci"

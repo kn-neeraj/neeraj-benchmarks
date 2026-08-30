@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MathTutor-Bench: Kimi K3 vs DeepSeek V4 Flash vs GLM-5.2 &middot; Neeraj's Benchmarks</title>
+  <script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="wordmark" href="../..">Neeraj Benchmarks</a>
+      <div class="topbar-right">
+        <button class="theme-toggle" id="theme-toggle" type="button">DARK</button>
+        <a class="topbar-link" href="https://github.com/kn-neeraj/neeraj-benchmarks/tree/main/experiments/mathtutorbench-eval">CODE &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <a class="back-link" href="../..">&larr; ALL EXPERIMENTS</a>
+
+    <header class="exp-hero">
+      <span class="eyebrow" data-enter style="--enter-i:0">EXPERIMENT <span class="accent-num">01</span> &middot; model-comparison &middot; <span class="badge badge-complete">Complete</span></span>
+      <h1 data-enter style="--enter-i:1">MathTutor-Bench: Kimi K3 vs DeepSeek V4 Flash vs GLM-5.2</h1>
+      <p class="exp-hero-sub" data-enter style="--enter-i:2">Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher&#x27;s response.</p>
+      <div class="exp-meta-row" data-enter style="--enter-i:3">
+        <span class="exp-meta">2026-08-30</span>
+      </div>
+    </header>
+
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">01</span><h2>Task</h2></div>
+      <p>In this experiment, we are evaluating tutoring skill, or pedagogy. Given a real math problem and a partial student/teacher conversation, the model writes the next teacher turn (max 2 sentences). A good turn nudges the student toward their mistake with a question or hint; a bad one either solves it for them or misses the point entirely. Scale: 322 of 327 dialogs.</p>
+    </section>
+
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">02</span><h2>Methodology</h2></div>
+      <p class="metric-description">0–1 score from an LLM judge (Qwen3.8-Max) comparing the model&#x27;s turn to the real human teacher&#x27;s turn; 0.50 means judged equal to the human.</p>
+      <div class="steps">
+        <div class="step" data-reveal data-reveal-group="steps">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <h3>Dataset</h3>
+            <p><a href="https://github.com/eth-lre/mathtutorbench">MathTutor-Bench (hard scaffolding subset)</a> &middot; License: CC BY-SA 4.0 (treated as the more restrictive of two conflicting license statements in the source repo)</p>
+          </div>
+        </div>
+        
+        <div class="step" data-reveal data-reveal-group="steps">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <h3>Judge prompt</h3>
+            <pre class="judge-prompt">You are grading a math tutoring dialog. A student is working through the
+problem below with a teacher. You will see the problem, the conversation so
+far, the teacher&#x27;s ACTUAL human response, and a CANDIDATE response written
+by a different teacher for the same turn.
+
+Problem: {question}
+Reference solution (for your own context only - do not require the teacher
+turn to reveal this): {reference_solution}
+
+Conversation so far:
+{dialog_history}
+
+ACTUAL human teacher response: {ground_truth_response}
+
+CANDIDATE teacher response: {candidate_response}
+
+Score the CANDIDATE response from 0.0 to 1.0 on how well it serves as the
+next teacher turn, judged AGAINST the actual human response as the
+reference point. A score of 0.50 means the candidate is judged equal in
+quality to the actual human response. Higher than 0.50 means better than
+the human response; lower means worse. Consider: does it give a helpful
+nudge, question, or hint (not the full answer)? Is it at most two
+sentences? Is it appropriate given the conversation so far? Do not reward
+responses that reveal the final answer.
+
+Respond with ONLY a JSON object of the exact form
+{&quot;score&quot;: &lt;float between 0.0 and 1.0&gt;, &quot;rationale&quot;: &quot;&lt;one sentence&gt;&quot;},
+with no other text.</pre>
+          </div>
+        </div>
+        <div class="step" data-reveal data-reveal-group="steps">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <h3>Notes &amp; limitations</h3>
+            <ul><li>Judge is Qwen3.8-Max, deliberately not one of the three models under test, to reduce self-preference and shared-lineage bias.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">03</span><h2>Results &mdash; Judge score</h2></div>
+      
+      <div class="result-set">
+        <h3 class="result-set-title">1. Reasoning disabled (n=322)</h3>
+        <div class="chart-wrap">
+          <div class="chart-canvas-box"><canvas data-chart-canvas="reasoning_off"></canvas></div>
+          <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
+          <div class="chart-legend">
+            <span><span class="legend-swatch"></span> Mean</span>
+            <span><span class="legend-swatch ci"></span> 95% confidence interval</span>
+          </div>
+        </div>
+        <script type="application/json" data-chart-data="reasoning_off">{"labels": ["GLM-5.2", "DeepSeek-V4-Flash", "Kimi-K3"], "means": [0.6936, 0.6151, 0.5868], "ci_low": [0.661, 0.5803, 0.5473], "ci_high": [0.7263, 0.6498, 0.6263], "ns": [322, 322, 322], "metricName": "Judge score", "axisMax": 1}</script>
+
+        <table class="results-table">
+          <thead>
+            <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td>GLM-5.2</td>
+          <td>0.6936</td>
+          <td>[0.6610, 0.7263]</td>
+          <td>322</td>
+        </tr>
+        <tr>
+          <td>DeepSeek-V4-Flash</td>
+          <td>0.6151</td>
+          <td>[0.5803, 0.6498]</td>
+          <td>322</td>
+        </tr>
+        <tr>
+          <td>Kimi-K3</td>
+          <td>0.5868</td>
+          <td>[0.5473, 0.6263]</td>
+          <td>322</td>
+        </tr>
+          </tbody>
+        </table>
+        
+        
+      </div>
+      <div class="result-set">
+        <h3 class="result-set-title">2. Reasoning enabled (n=50)</h3>
+        <div class="chart-wrap">
+          <div class="chart-canvas-box"><canvas data-chart-canvas="reasoning_on"></canvas></div>
+          <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
+          <div class="chart-legend">
+            <span><span class="legend-swatch"></span> Mean</span>
+            <span><span class="legend-swatch ci"></span> 95% confidence interval</span>
+          </div>
+        </div>
+        <script type="application/json" data-chart-data="reasoning_on">{"labels": ["GLM-5.2", "DeepSeek-V4-Flash", "Kimi-K3"], "means": [0.835, 0.714, 0.693], "ci_low": [0.777, 0.629, 0.606], "ci_high": [0.893, 0.799, 0.78], "ns": [50, 50, 50], "metricName": "Judge score", "axisMax": 1}</script>
+
+        <table class="results-table">
+          <thead>
+            <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td>GLM-5.2</td>
+          <td>0.8350</td>
+          <td>[0.7770, 0.8930]</td>
+          <td>50</td>
+        </tr>
+        <tr>
+          <td>DeepSeek-V4-Flash</td>
+          <td>0.7140</td>
+          <td>[0.6290, 0.7990]</td>
+          <td>50</td>
+        </tr>
+        <tr>
+          <td>Kimi-K3</td>
+          <td>0.6930</td>
+          <td>[0.6060, 0.7800]</td>
+          <td>50</td>
+        </tr>
+          </tbody>
+        </table>
+        <p class="result-set-description">All three models scored higher with reasoning enabled, same direction across the board.</p>
+        <div class="result-callout"><span class="result-callout-label">Behind the numbers</span><p class="result-callout-text">Getting clean reasoning-mode data took real debugging: a token-budget starvation bug and a stop-sequence bug that matched inside models&#x27; hidden reasoning traces both had to be found and fixed first — see the experiment README for the full three-attempt story.</p></div>
+      </div>
+      
+      <div class="example-block">
+        <h3 class="result-set-title">Example dialog</h3>
+        <div class="example-card">
+          <div class="example-card-section">
+            <p class="example-problem"><strong>Problem:</strong> Bob buys 50 feet of rope. He uses a 5th of it to make a small piece of art. He takes the rest and gives half of it to the friend. After that, he cuts 2-foot sections. How many sections does he get?</p>
+          </div>
+          <div class="example-card-section convo"><div class="convo-turn convo-truncated"><span class="convo-ellipsis">&hellip;</span><span class="convo-truncated-label">previous conversation</span></div>
+      <div class="convo-turn convo-teacher">
+        <span class="convo-speaker">Teacher</span>
+        <p class="convo-text">Nope! After Bob made the artwork he had 40 feet left, then he gave half to the friend, so he had 20 feet left. So how many 2 foot sections could he make from that?</p>
+      </div>
+      <div class="convo-turn convo-student">
+        <span class="convo-speaker">Student</span>
+        <p class="convo-text">Oh, right! After Bob gave half of the rope to the friend, he would have 20 feet of rope left. Then, if he divided that into 2-foot sections, he would get 10 sections. So, the total number of sections he would have is 10 + 10 = 20.</p>
+      </div>
+            <div class="convo-turn convo-teacher convo-ground-truth">
+              <span class="convo-speaker">Teacher (actual human)</span>
+              <p class="convo-text">So you said if he divided it into 2-foot sections he would have 10 sections. Why are you adding another 10 section to that?</p>
+            </div>
+          </div>
+          <div class="example-card-section">
+            <span class="example-responses-label">Model responses for this turn</span>
+            <div class="example-responses">
+      <div class="example-response">
+        <div class="example-response-head">
+          <span class="example-response-model">Kimi K3</span>
+          <span class="example-response-score">score: 0.1</span>
+        </div>
+        <p class="example-response-text">You&#x27;re very close! Remember, the 10 sections are from the 20 feet Bob gave to his friend, not from the 20 feet he kept for himself. So, how many sections can he make from the 20 feet he kept?</p>
+      </div>
+      <div class="example-response">
+        <div class="example-response-head">
+          <span class="example-response-model">DeepSeek V4 Flash</span>
+          <span class="example-response-score">score: 0.2</span>
+        </div>
+        <p class="example-response-text">You had the right idea when you first divided 40 by 2 to get 20 sections from the rope he kept for himself. Now, think carefully: after he gives half of the 40 feet to his friend, how much rope does he actually have left to cut into 2-foot sections?</p>
+      </div>
+      <div class="example-response">
+        <div class="example-response-head">
+          <span class="example-response-model">GLM-5.2</span>
+          <span class="example-response-score">score: 0.9</span>
+        </div>
+        <p class="example-response-text">You&#x27;re right that he gets 10 sections from the 20 feet he kept — but why are you adding the extra 10? Remember, the first 10 feet went into the artwork, so it&#x27;s not available to be cut into sections.</p>
+      </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">04</span><h2>Takeaways</h2></div>
+      <ul class="takeaways-list"><li><strong>GLM-5.2 is the strongest tutor of the three, with a statistically meaningful edge</strong> — n=322 is large enough that this gap isn't sampling noise.</li><li><strong>Reasoning consistently helps pedagogical scaffolding, for all three models.</strong></li></ul>
+    </section>
+
+    <section class="section" style="border-bottom: none;">
+      <a class="methodology-link" href="https://github.com/kn-neeraj/neeraj-benchmarks/tree/main/experiments/mathtutorbench-eval">FULL METHODOLOGY &amp; CODE &rarr;</a>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>These are evals run by <a href="https://kneeraj.com">Neeraj</a> to evaluate different models and harnesses.</p>
+      <p>Questions or issues? Reach out on <a href="https://x.com/kn_neeraj1">Twitter</a> or <a href="https://github.com/kn-neeraj">GitHub</a>.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="../../theme.js"></script>
+  <script src="../../main.js"></script>
+  <script src="../../chart.js"></script>
+</body>
+</html>

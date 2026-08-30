@@ -1,48 +1,47 @@
-// Renders the results bar chart using Chart.js (loaded via CDN), with a
-// small custom plugin drawing 95%-CI whiskers on top of each bar. Reads
-// data from the #results-data JSON script tag so the same script works for
-// any experiment page.
+// Renders one Chart.js bar chart per [data-chart-data] script tag on the
+// page (paired with its canvas via a matching data-chart-canvas="<id>"
+// attribute), with a small custom plugin drawing 95%-CI whiskers on top of
+// each bar. A page can have any number of these - e.g. a "reasoning off" /
+// "reasoning on" pair of charts - each gets its own independent instance.
 (function () {
-  var dataEl = document.getElementById("results-data");
-  if (!dataEl || typeof Chart === "undefined") return;
-  var data = JSON.parse(dataEl.textContent);
-  var canvas = document.getElementById("results-chart");
-  if (!canvas) return;
+  if (typeof Chart === "undefined") return;
 
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var styles = getComputedStyle(document.documentElement);
-  var css = function (name) { return styles.getPropertyValue(name).trim(); };
 
-  var ciWhiskerPlugin = {
-    id: "ciWhisker",
-    afterDatasetsDraw: function (chart) {
-      var meta = chart.getDatasetMeta(0);
-      var ctx = chart.ctx;
-      var xScale = chart.scales.x;
-      var ciColor = css("--chart-ci") || "#131311";
-      ctx.save();
-      ctx.strokeStyle = ciColor;
-      ctx.globalAlpha = 0.65;
-      ctx.lineWidth = 2;
-      meta.data.forEach(function (bar, i) {
-        var low = xScale.getPixelForValue(data.ci_low[i]);
-        var high = xScale.getPixelForValue(data.ci_high[i]);
-        var y = bar.y;
-        var capHalf = 5;
-        ctx.beginPath();
-        ctx.moveTo(low, y);
-        ctx.lineTo(high, y);
-        ctx.moveTo(low, y - capHalf);
-        ctx.lineTo(low, y + capHalf);
-        ctx.moveTo(high, y - capHalf);
-        ctx.lineTo(high, y + capHalf);
-        ctx.stroke();
-      });
-      ctx.restore();
-    },
-  };
+  function makeCiWhiskerPlugin(data) {
+    return {
+      id: "ciWhisker",
+      afterDatasetsDraw: function (chart) {
+        var styles = getComputedStyle(document.documentElement);
+        var css = function (name) { return styles.getPropertyValue(name).trim(); };
+        var meta = chart.getDatasetMeta(0);
+        var ctx = chart.ctx;
+        var xScale = chart.scales.x;
+        var ciColor = css("--chart-ci") || "#131311";
+        ctx.save();
+        ctx.strokeStyle = ciColor;
+        ctx.globalAlpha = 0.65;
+        ctx.lineWidth = 2;
+        meta.data.forEach(function (bar, i) {
+          var low = xScale.getPixelForValue(data.ci_low[i]);
+          var high = xScale.getPixelForValue(data.ci_high[i]);
+          var y = bar.y;
+          var capHalf = 5;
+          ctx.beginPath();
+          ctx.moveTo(low, y);
+          ctx.lineTo(high, y);
+          ctx.moveTo(low, y - capHalf);
+          ctx.lineTo(low, y + capHalf);
+          ctx.moveTo(high, y - capHalf);
+          ctx.lineTo(high, y + capHalf);
+          ctx.stroke();
+        });
+        ctx.restore();
+      },
+    };
+  }
 
-  function buildChart() {
+  function buildChart(canvas, data) {
     var s = getComputedStyle(document.documentElement);
     var get = function (name) { return s.getPropertyValue(name).trim(); };
     return new Chart(canvas, {
@@ -104,19 +103,28 @@
           },
         },
       },
-      plugins: [ciWhiskerPlugin],
+      plugins: [makeCiWhiskerPlugin(data)],
     });
   }
 
-  var chart = buildChart();
+  var instances = [];
+  document.querySelectorAll("[data-chart-data]").forEach(function (dataEl) {
+    var id = dataEl.getAttribute("data-chart-data");
+    var canvas = document.querySelector('[data-chart-canvas="' + id + '"]');
+    if (!canvas) return;
+    var data = JSON.parse(dataEl.textContent);
+    instances.push({ canvas: canvas, data: data, chart: buildChart(canvas, data) });
+  });
 
   // Chart.js bakes colors in at construction time, so a theme switch needs
   // a full rebuild rather than a live restyle. Covers both the OS setting
   // changing and the manual toggle in theme.js (which fires "themechange").
-  function rebuild() {
-    chart.destroy();
-    chart = buildChart();
+  function rebuildAll() {
+    instances.forEach(function (inst) {
+      inst.chart.destroy();
+      inst.chart = buildChart(inst.canvas, inst.data);
+    });
   }
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rebuild);
-  window.addEventListener("themechange", rebuild);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rebuildAll);
+  window.addEventListener("themechange", rebuildAll);
 })();

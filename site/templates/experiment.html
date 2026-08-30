@@ -39,31 +39,8 @@
     </section>
 
     <section class="section" data-reveal>
-      <div class="section-head"><span class="section-num">02</span><h2>Results &mdash; {{METRIC_NAME}}</h2></div>
+      <div class="section-head"><span class="section-num">02</span><h2>Methodology</h2></div>
       <p class="metric-description">{{METRIC_DESCRIPTION}}</p>
-
-      <div class="chart-wrap">
-        <div class="chart-canvas-box"><canvas id="results-chart"></canvas></div>
-        <p class="chart-fallback">Enable JavaScript to see the interactive chart &mdash; figures are in the table below.</p>
-        <div class="chart-legend">
-          <span><span class="legend-swatch"></span> Mean</span>
-          <span><span class="legend-swatch ci"></span> 95% confidence interval</span>
-        </div>
-      </div>
-      <script type="application/json" id="results-data">{{RESULTS_JSON}}</script>
-
-      <table class="results-table">
-        <thead>
-          <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
-        </thead>
-        <tbody>
-          {{ROWS}}
-        </tbody>
-      </table>
-    </section>
-
-    <section class="section" data-reveal>
-      <div class="section-head"><span class="section-num">03</span><h2>Methodology</h2></div>
       <div class="steps">
         <div class="step" data-reveal data-reveal-group="steps">
           <span class="step-num">01</span>
@@ -72,8 +49,9 @@
             <p><a href="{{DATASET_URL}}">{{DATASET_NAME}}</a> &middot; License: {{DATASET_LICENSE}}</p>
           </div>
         </div>
+        {{JUDGE_PROMPT_STEP}}
         <div class="step" data-reveal data-reveal-group="steps">
-          <span class="step-num">02</span>
+          <span class="step-num">{{NOTES_STEP_NUM}}</span>
           <div class="step-body">
             <h3>Notes &amp; limitations</h3>
             <ul>{{NOTES}}</ul>
@@ -81,6 +59,14 @@
         </div>
       </div>
     </section>
+
+    <section class="section" data-reveal>
+      <div class="section-head"><span class="section-num">03</span><h2>Results &mdash; {{METRIC_NAME}}</h2></div>
+      {{RESULT_SECTIONS}}
+      {{EXAMPLE_SECTION}}
+    </section>
+
+    {{TAKEAWAYS_SECTION}}
 
     <section class="section" style="border-bottom: none;">
       <a class="methodology-link" href="{{METHODOLOGY_URL}}">FULL METHODOLOGY &amp; CODE &rarr;</a>
