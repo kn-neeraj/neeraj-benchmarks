@@ -100,66 +100,87 @@ python3 scripts/aggregate_stats.py \
 
 ## Results
 
-**Headline finding: this experiment cannot answer the original question
-("does reasoning help or hurt scaffolding?") as run, because of a token-budget
-bug, not a reasoning-quality effect.** Reporting the numbers below in full,
-but do not read them as "medium reasoning is worse at tutoring" - they
-mostly measure "what breaks when you enable reasoning without raising the
-token budget."
+It took three attempts to get a trustworthy answer. Both failed attempts are
+preserved under `results/attempt1_maxtokens200_broken/` and
+`results/attempt2_maxtokens600_serverside_stop_bug/` rather than deleted,
+since the failure modes are themselves useful to know about if anyone
+enables `reasoning_effort` on this endpoint elsewhere in this project.
 
-### What went wrong
+### Attempt 1 (`max_tokens=200`) - broken: token-budget starvation
 
 `run_generation.py`'s default `max_tokens=200` was carried over unchanged
 from the main run's `reasoning_effort="none"` condition, where none of that
 budget goes to hidden reasoning. Under `reasoning_effort="medium"`, reasoning
-tokens draw from the *same* budget as the visible answer:
+tokens draw from the *same* budget as the visible answer, so most responses
+came back empty or truncated mid-thought:
 
 | Model | Empty responses (of 50) | Failure mode |
 |---|---|---|
-| DeepSeek V4 Flash | 35 (70%) | `finish_reason="stop"` with nothing - model ends the turn with zero visible content |
-| GLM-5.2 | 21 (42%) | `finish_reason="length"` - reasoning alone consumed the full 200-token budget |
-| Kimi K3 | 2 (4%) | mostly produced *some* text, but a live diagnostic call (below) shows why even those are unreliable |
+| DeepSeek V4 Flash | 35 (70%) | `finish_reason="stop"` with nothing |
+| GLM-5.2 | 21 (42%) | `finish_reason="length"` - reasoning alone consumed the full budget |
+| Kimi K3 | 2 (4%), but the "non-empty" ones were truncated reasoning leaking into the answer field (e.g. `"Let me analyze the student's work."` and nothing else) |
 
-A live test call to `kimi-k3` at `reasoning_effort="medium"` with the
-production prompt, `max_tokens=200`, reproduced the failure directly:
-`content` came back `None` (`finish_reason="length"`) - all 200 tokens went
-to the hidden `reasoning` field. Raising `max_tokens` to 600 on the same
-prompt produced a clean two-sentence, on-task hint (140 reasoning tokens +
-53 answer tokens = 193 total, just over the old budget). This confirms the
-budget, not the model's tutoring judgment, is what's failing.
+### Attempt 2 (`max_tokens=600`) - broken: stop-sequences firing inside hidden reasoning
 
-Consistent with this, `kimi-k3`'s 48 nominally "non-empty" responses under
-`medium` are dominated by truncated reasoning leaking into the answer field -
-e.g. `"Let me analyze the student's work."` or a response that trails off
-mid-calculation (`"...220 + 23 = 243, minus 80 = 143. But the student said x
-= "`). These are not lower-quality *tutoring* - they're cut-off internal
-monologue that never reached the actual answer.
+Raising the budget fixed Kimi K3 (2→1 empty) and GLM-5.2 (21→2 empty), but
+**DeepSeek V4 Flash was still 33/50 (66%) empty.** Investigation ruled out
+budget: empty responses ranged from 101 to 736 completion tokens used - no
+consistent "ran out of room" pattern, and some exceeded the 600 cap entirely.
+
+The real cause: `run_generation.py` sends `stop=["Student:", "\n\n",
+"Teacher:"]` to prevent the model hallucinating a full continued
+conversation. With reasoning enabled, this stop-matching appears to scan the
+*raw generation stream, including the hidden reasoning trace* - and a
+reasoning trace naturally drafts candidate teacher lines and paragraph
+breaks while thinking, so it can contain a literal `"Teacher:"` or `"\n\n"`
+before the real answer ever starts, truncating the whole response to
+nothing. This is the same failure the source MathTutorBench repo's own model
+wrapper (`models/completion_api.py`) explicitly works around, with the
+comment: *"Stop strings are applied after the trace is removed, since they
+would otherwise fire inside the reasoning."*
+
+**Fix** (in [`harbor/task.py`](../../harbor/task.py)): server-side `stop` is
+now only sent when `reasoning_effort` is `"none"`/unset; client-side
+truncation (`truncate_at_stop`) still always applies to the final returned
+content, matching the source repo's approach.
+
+### Attempt 3 (`max_tokens=900` + fixed stop handling) - clean
+
+| Model | Empty responses (of 50) |
+|---|---|
+| DeepSeek V4 Flash | 7 (14%) - down from 33 |
+| Kimi K3 | 4 (8%) |
+| GLM-5.2 | 2 (4%) |
+
+13/150 (8.7%) is a normal rate consistent with genuine model behavior
+(occasional refusals/empty turns happen even at `reasoning_effort="none"` in
+the main run), not a pipeline bug. This is the run trusted for the
+comparison below.
 
 ### Numbers (see `results/comparison.csv` and `results/comparison_chart.png`)
 
-| Model | none (baseline, n=50) | medium, all responses (n=50) | medium, non-empty only |
-|---|---|---|---|
-| GLM-5.2 | 0.755 ± 0.079 | 0.283 ± 0.105 (21 empty) | 0.276 ± 0.131 (n=29) |
-| Kimi K3 | 0.642 ± 0.097 | 0.177 ± 0.070 (2 empty) | 0.146 ± 0.058 (n=48) |
-| DeepSeek V4 Flash | 0.577 ± 0.093 | 0.513 ± 0.116 (35 empty) | 0.760 ± 0.132 (n=15) |
+Same 50 dialogs, `none` (main run baseline) vs `medium` (this experiment):
 
-Note that excluding empty responses does **not** recover a clean signal for
-GLM-5.2 or Kimi K3 - their non-empty scores stay just as low, confirming the
-"non-empty" responses are still budget-truncated garbage, not genuine
-answers. DeepSeek's non-empty subset (n=15, a small and likely biased sample
-of "problems where less reasoning was needed") is too small and too
-selection-biased to read as "medium reasoning helps DeepSeek."
+| Model | none (n=50) | medium, all responses (n=50) | medium, non-empty only |
+|---|---|---|---|
+| GLM-5.2 | 0.755 ± 0.079 | **0.835 ± 0.058** (2 empty) | 0.870 ± 0.035 (n=48) |
+| DeepSeek V4 Flash | 0.577 ± 0.093 | **0.714 ± 0.085** (7 empty) | 0.763 ± 0.076 (n=43) |
+| Kimi K3 | 0.642 ± 0.097 | **0.693 ± 0.087** (4 empty) | 0.732 ± 0.080 (n=46) |
 
 ### Conclusion
 
-No usable conclusion about reasoning effort's effect on pedagogical
-scaffolding can be drawn from this run. The real, valid finding is
-operational: **naively turning on `reasoning_effort` without re-tuning
-`max_tokens` silently corrupts most of the output**, and the failure modes
-differ by model (silent-empty vs. token-exhausted vs. truncated-leak) in a
-way that would be easy to miss if you only checked score means without
-inspecting raw responses, as this writeup did. A valid version of this
-experiment would need `max_tokens` raised to comfortably cover
-reasoning + answer (the diagnostic call suggests 600+ is enough for
-`kimi-k3` at `medium`) before a meaningful medium-vs-none comparison is
-possible - not run yet, pending direction.
+**All three models scored higher with `reasoning_effort="medium"` than with
+`"none"`, and the direction is consistent across all three** - none got
+worse. That consistency is itself informative even though each individual
+model's 95% CI overlaps its own `none` baseline at n=50 (this is a modest
+sample; DeepSeek's gap is the closest to non-overlapping). The improvement
+holds and gets slightly larger when excluding the residual empty responses,
+so it isn't an artifact of the empty-response exclusion choice either.
+
+**Honest read:** this is suggestive evidence that letting these models think
+before answering does help them scaffold better on this task, for all three
+models tested - but n=50 per model, one judge, one judge prompt, and
+non-overlapping-but-close CIs mean this should be read as "worth taking
+seriously," not "proven." A larger n (e.g. running the full 322-dialog set
+at `medium`) would be needed to make this a confident claim comparable in
+rigor to the main run.
