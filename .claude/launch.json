@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs-preview",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd docs && exec python3 -m http.server 8642"],
+      "port": 8642
+    }
+  ]
+}

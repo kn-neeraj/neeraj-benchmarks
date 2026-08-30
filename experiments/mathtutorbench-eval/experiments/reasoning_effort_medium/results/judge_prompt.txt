@@ -1,0 +1,20 @@
+Judge model: qwen3.8-max
+Temperature: 0
+
+Prompt template (formatted per-example with question/reference_solution/dialog_history/ground_truth_response/candidate_response):
+
+You are grading a math tutoring dialog. A student is working through the problem below with a teacher. You will see the problem, the conversation so far, the teacher's ACTUAL human response, and a CANDIDATE response written by a different teacher for the same turn.
+
+Problem: {question}
+Reference solution (for your own context only - do not require the teacher turn to reveal this): {reference_solution}
+
+Conversation so far:
+{dialog_history}
+
+ACTUAL human teacher response: {ground_truth_response}
+
+CANDIDATE teacher response: {candidate_response}
+
+Score the CANDIDATE response from 0.0 to 1.0 on how well it serves as the next teacher turn, judged AGAINST the actual human response as the reference point. A score of 0.50 means the candidate is judged equal in quality to the actual human response. Higher than 0.50 means better than the human response; lower means worse. Consider: does it give a helpful nudge, question, or hint (not the full answer)? Is it at most two sentences? Is it appropriate given the conversation so far? Do not reward responses that reveal the final answer.
+
+Respond with ONLY a JSON object of the exact form {{"score": <float between 0.0 and 1.0>, "rationale": "<one sentence>"}}, with no other text.

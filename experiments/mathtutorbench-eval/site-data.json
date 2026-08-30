@@ -1,0 +1,32 @@
+{
+  "id": "mathtutorbench-hard-scaffolding",
+  "title": "MathTutorBench: Hard Scaffolding",
+  "summary": "Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher's response.",
+  "date": "2026-08-30",
+  "status": "in-progress",
+  "category": "model-comparison",
+  "dataset": {
+    "name": "MathTutorBench (hard scaffolding subset)",
+    "url": "https://github.com/eth-lre/mathtutorbench",
+    "license": "CC BY-SA 4.0 (treated as the more restrictive of two conflicting license statements in the source repo)"
+  },
+  "task_description": "Each item is a math problem plus a partial student/teacher dialog. The model under test writes the next teacher turn (max 2 sentences) without giving away the answer.",
+  "metric": {
+    "name": "Judge score",
+    "range": [0, 1],
+    "higher_is_better": true,
+    "description": "0–1 score from an LLM judge (Qwen3.8-Max) comparing the model's turn to the real human teacher's turn; 0.50 means judged equal to the human."
+  },
+  "results": [
+    {"name": "GLM-5.2", "mean": 0.6936, "ci_low": 0.6610, "ci_high": 0.7263, "n": 322},
+    {"name": "DeepSeek-V4-Flash", "mean": 0.6151, "ci_low": 0.5803, "ci_high": 0.6498, "n": 322},
+    {"name": "Kimi-K3", "mean": 0.5868, "ci_low": 0.5473, "ci_high": 0.6263, "n": 322}
+  ],
+  "notes": [
+    "Judge, judge prompt, and reasoning-effort settings differ from Braintrust's original eval (not public), so exact score values are not expected to match — rank order and CI overlap are what's comparable.",
+    "Judge is Qwen3.8-Max, deliberately not one of the three models under test, to reduce self-preference and shared-lineage bias.",
+    "Results shown are the reasoning_effort=none condition; see the experiment README for the full run design."
+  ],
+  "methodology_url": "https://github.com/kn-neeraj/neeraj-benchmarks/tree/main/experiments/mathtutorbench-eval",
+  "chart_type": "bar_ci"
+}

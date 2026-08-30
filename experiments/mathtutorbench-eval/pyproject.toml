@@ -1,0 +1,18 @@
+[project]
+name = "mathtutorbench-eval"
+version = "0.1.0"
+description = "Replication of the Braintrust Kimi K3 / DeepSeek V4 Flash / GLM-5.2 hard-scaffolding eval on MathTutorBench, run entirely on an OpenCode Go subscription."
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "tenacity>=8.2",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+]
+
+# Not packaged as an installable module - run scripts directly from a venv
+# with `pip install -r requirements.txt`.

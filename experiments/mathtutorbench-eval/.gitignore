@@ -1,0 +1,6 @@
+.env
+/data/raw
+/results/*.jsonl
+__pycache__/
+*.pyc
+.venv/

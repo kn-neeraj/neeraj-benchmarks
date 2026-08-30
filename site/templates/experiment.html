@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}} · Neeraj's Benchmarks</title>
+  <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+  <header class="site-header exp-header">
+    <a class="back-link" href="../../">&larr; All experiments</a>
+    <div class="exp-title-row">
+      <h1>{{TITLE}}</h1>
+      {{STATUS_BADGE}}
+    </div>
+    <p class="subtitle">{{SUMMARY}}</p>
+    <p class="exp-meta">{{CATEGORY}} &middot; {{DATE}}</p>
+  </header>
+
+  <main class="exp-main">
+    <section>
+      <h2>Task</h2>
+      <p>{{TASK_DESCRIPTION}}</p>
+    </section>
+
+    <section>
+      <h2>Results &mdash; {{METRIC_NAME}}</h2>
+      <p class="metric-description">{{METRIC_DESCRIPTION}}</p>
+      <div class="bar-chart">
+        {{BARS}}
+      </div>
+      <table class="results-table">
+        <thead>
+          <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
+        </thead>
+        <tbody>
+          {{ROWS}}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Dataset</h2>
+      <p><a href="{{DATASET_URL}}">{{DATASET_NAME}}</a> &middot; License: {{DATASET_LICENSE}}</p>
+    </section>
+
+    <section>
+      <h2>Notes</h2>
+      <ul class="notes-list">
+        {{NOTES}}
+      </ul>
+    </section>
+
+    <section>
+      <a class="methodology-link" href="{{METHODOLOGY_URL}}">Full methodology &amp; code &rarr;</a>
+    </section>
+  </main>
+</body>
+</html>

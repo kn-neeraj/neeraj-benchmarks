@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MathTutorBench: Hard Scaffolding · Neeraj's Benchmarks</title>
+  <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+  <header class="site-header exp-header">
+    <a class="back-link" href="../../">&larr; All experiments</a>
+    <div class="exp-title-row">
+      <h1>MathTutorBench: Hard Scaffolding</h1>
+      <span class="badge badge-in-progress">In progress</span>
+    </div>
+    <p class="subtitle">Three open-weight models write the next tutor turn in a math dialog; an LLM judge scores each turn against the real human teacher&#x27;s response.</p>
+    <p class="exp-meta">model-comparison &middot; 2026-08-30</p>
+  </header>
+
+  <main class="exp-main">
+    <section>
+      <h2>Task</h2>
+      <p>Each item is a math problem plus a partial student/teacher dialog. The model under test writes the next teacher turn (max 2 sentences) without giving away the answer.</p>
+    </section>
+
+    <section>
+      <h2>Results &mdash; Judge score</h2>
+      <p class="metric-description">0–1 score from an LLM judge (Qwen3.8-Max) comparing the model&#x27;s turn to the real human teacher&#x27;s turn; 0.50 means judged equal to the human.</p>
+      <div class="bar-chart">
+        
+        <div class="bar-row">
+          <div class="bar-label">GLM-5.2</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:100.0%"></div>
+            <div class="bar-ci" style="left:95.3%; width:9.400000000000006%"></div>
+          </div>
+          <div class="bar-value">0.694</div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-label">DeepSeek-V4-Flash</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:88.7%"></div>
+            <div class="bar-ci" style="left:83.7%; width:10.0%"></div>
+          </div>
+          <div class="bar-value">0.615</div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-label">Kimi-K3</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:84.6%"></div>
+            <div class="bar-ci" style="left:78.9%; width:11.399999999999991%"></div>
+          </div>
+          <div class="bar-value">0.587</div>
+        </div>
+      </div>
+      <table class="results-table">
+        <thead>
+          <tr><th>Model</th><th>Mean</th><th>95% CI</th><th>n</th></tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td>GLM-5.2</td>
+          <td>0.6936</td>
+          <td>[0.6610, 0.7263]</td>
+          <td>322</td>
+        </tr>
+
+        <tr>
+          <td>DeepSeek-V4-Flash</td>
+          <td>0.6151</td>
+          <td>[0.5803, 0.6498]</td>
+          <td>322</td>
+        </tr>
+
+        <tr>
+          <td>Kimi-K3</td>
+          <td>0.5868</td>
+          <td>[0.5473, 0.6263]</td>
+          <td>322</td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Dataset</h2>
+      <p><a href="https://github.com/eth-lre/mathtutorbench">MathTutorBench (hard scaffolding subset)</a> &middot; License: CC BY-SA 4.0 (treated as the more restrictive of two conflicting license statements in the source repo)</p>
+    </section>
+
+    <section>
+      <h2>Notes</h2>
+      <ul class="notes-list">
+        <li>Judge, judge prompt, and reasoning-effort settings differ from Braintrust&#x27;s original eval (not public), so exact score values are not expected to match — rank order and CI overlap are what&#x27;s comparable.</li><li>Judge is Qwen3.8-Max, deliberately not one of the three models under test, to reduce self-preference and shared-lineage bias.</li><li>Results shown are the reasoning_effort=none condition; see the experiment README for the full run design.</li>
+      </ul>
+    </section>
+
+    <section>
+      <a class="methodology-link" href="https://github.com/kn-neeraj/neeraj-benchmarks/tree/main/experiments/mathtutorbench-eval">Full methodology &amp; code &rarr;</a>
+    </section>
+  </main>
+</body>
+</html>

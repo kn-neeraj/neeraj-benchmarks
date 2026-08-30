@@ -1,0 +1,80 @@
+# Resolved OpenCode Go model configuration.
+#
+# All IDs below were confirmed by a live POST to /chat/completions on 2026-08-29
+# (each returned HTTP 200 with a real completion). Do not assume the
+# "opencode-go/<id>" prefix used in the OpenCode TUI config applies here — it
+# does not. IDs are bare strings as returned by GET /models.
+
+api:
+  base_url: "https://opencode.ai/zen/go/v1"
+  models_endpoint: "/models"            # GET  -> https://opencode.ai/zen/go/v1/models
+  chat_endpoint: "/chat/completions"    # POST -> https://opencode.ai/zen/go/v1/chat/completions
+  auth: "Bearer ${OPENCODE_GO_API_KEY}"
+  format: "openai-compatible"
+
+# The three open-weight models under test (per the Braintrust eval being replicated).
+models_under_test:
+  kimi_k3:
+    id: "kimi-k3"
+    display_name: "Kimi K3"
+  deepseek_v4_flash:
+    id: "deepseek-v4-flash"
+    display_name: "DeepSeek V4 Flash"
+  glm_5_2:
+    id: "glm-5.2"
+    display_name: "GLM-5.2"
+    # Note: glm-5.2 is directly available on the Go plan; the glm-5.3-flash
+    # fallback mentioned in the task brief was NOT needed.
+
+# Judge model: deliberately NOT one of the three models under test, to avoid
+# self-preference bias (a model favoring outputs written in its own style).
+#
+# Selection process (2026-08-29): tried gpt-5.6-luna (the preferred first
+# choice) and grok-4.6 as judge candidates first.
+#   - gpt-5.6-luna -> HTTP 500 "Internal server error", reproduced twice.
+#     Not usable on this endpoint right now.
+#   - grok-4.6 -> HTTP 401 "Model grok-4.6 is not supported for format
+#     oa-compat". Structural incompatibility, not an auth issue: Grok models
+#     are not served via this OpenAI-compatible path on the Go plan.
+#   - qwen3.8-max -> HTTP 200, clean completion. Selected as judge: it's the
+#     strongest confirmed-working general-reasoning model on the plan that
+#     isn't one of the three models under test, and it comes from a distinct
+#     model lineage (Alibaba/Qwen) vs. Moonshot (Kimi), DeepSeek, and
+#     Zhipu (GLM).
+judge:
+  id: "qwen3.8-max"
+  display_name: "Qwen3.8-Max"
+  temperature: 0
+
+# Reasoning-effort setting. The original eval design (and the initial plan
+# here) called for two conditions (high vs none). Per explicit instruction,
+# this replication runs a SINGLE condition instead, to control cost/scope.
+#
+# Verified live on 2026-08-29 against kimi-k3:
+#   - reasoning_effort: "high"  -> reasoning_tokens present (20/20, truncated)
+#   - omitted entirely           -> reasoning_tokens present (20/20, truncated,
+#                                    i.e. the default is NOT "none")
+#   - reasoning_effort: "none"  -> reasoning_tokens: 0, clean short answer,
+#                                   finish_reason "stop"
+# The param is real and functional. We standardize on "none" for all
+# generation calls: it is the cheapest condition and removes reasoning-token
+# cost/latency from every call, since only one condition is being run.
+reasoning_effort: "none"
+reasoning_effort_param_verified: true
+
+eval_design:
+  source_eval: "https://www.braintrust.dev/evals/kimi-k3-deepseek-v4"
+  dataset: "eth-lre/mathtutorbench (hard-scaffolding subset)"
+  n_dialogs: 327
+  n_trials_design: 3   # original eval design
+  n_trials_used: 1     # actual trials run in this replication, per explicit instruction:
+                        # cost estimate for 327x3 across all 3 models under test was ~$35,
+                        # exceeding the $30/week cap. 327x1 across all 3 models totals the
+                        # same request volume as a single model at 327x3 (~$12), which fits.
+                        # Trades away variance-averaging across trials for staying in budget.
+  max_teacher_turn_sentences: 2
+  judge_score_range: [0.0, 1.0]
+  judge_score_human_parity: 0.50
+  # Deviation from the original 2-condition design (high vs none reasoning
+  # effort): this replication runs ONE reasoning_effort condition ("none")
+  # by explicit instruction, not two. See reasoning_effort above.
