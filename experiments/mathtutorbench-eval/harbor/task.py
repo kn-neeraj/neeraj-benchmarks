@@ -156,13 +156,26 @@ def generate_teacher_turn(
     max_tokens: int = 200,
 ) -> Dict[str, Any]:
     system_prompt = instruction.render_system_prompt()
+    # Server-side stop only when reasoning is off. With reasoning enabled, the
+    # stop-string match appears to scan the raw generation stream INCLUDING
+    # the hidden reasoning trace - and a reasoning trace naturally drafts
+    # candidate teacher lines and paragraph breaks, so it can contain
+    # "Teacher:" or "\n\n" before the real answer ever starts, truncating the
+    # response to nothing (confirmed: deepseek-v4-flash produced empty output
+    # at wildly different completion_token counts, 101 to 736, with no token-
+    # budget pattern - only explained by an early in-reasoning stop match).
+    # The source MathTutorBench repo hit the same issue and works around it
+    # the same way (models/completion_api.py: "Stop strings are applied after
+    # the trace is removed, since they would otherwise fire inside the
+    # reasoning"). Client-side truncation below still applies regardless.
+    use_server_stop = reasoning_effort in (None, "none")
     result = client.chat(
         model=model,
         messages=[{"role": "user", "content": system_prompt}],
         temperature=0.7,
         max_tokens=max_tokens,
         reasoning_effort=reasoning_effort,
-        stop=STOP_SEQUENCES,
+        stop=STOP_SEQUENCES if use_server_stop else None,
     )
     content = truncate_at_stop(result["content"], STOP_SEQUENCES)
     content = _strip_stop_artifact(content)

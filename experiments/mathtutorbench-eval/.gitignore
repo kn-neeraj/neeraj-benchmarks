@@ -1,6 +1,7 @@
 .env
 /data/raw
-**/results/*.jsonl
+**/results/**/*.jsonl
 __pycache__/
 *.pyc
 .venv/
+.venv*/
